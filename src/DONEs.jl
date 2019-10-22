@@ -6,8 +6,48 @@ using NLopt
 
 include("src\\RFEs.jl")
 
+"""
+    DONE(
+        rfe::RFE # Random Feature/Fourier Expansion
+
+        # Variables
+        current_optimal_x::Vector{T} where T <: AbstractFloat
+        n::Int # number of variables
+        lower_bound::Vector{T} where T <: AbstractFloat
+        upper_bound::Vector{T} where T <: AbstractFloat
+
+        # DONE algorithm sliding window variant
+        sliding_window::Bool
+        sliding_window_length::Int
+        past_inputs::Vector{Vector{T}} where T <: AbstractFloat
+        past_outputs::Vector{T} where T <: AbstractFloat
+
+        # Algorithm variables
+        iteration::Int
+
+        # Exploration
+        surrogate_exploration_prob_dist::Distributions.Distribution
+        function_exploration_prob_dist::Distributions.Distribution)
+
+A DONE (Data-based Online Non-linear Extremun-seeker) struct is the main structure for finding the minimum of an unknown function that is typically expensive or difficult to evaluate and that returns a
+'measurement' that is corrupted by noise.
+The purpose of the underlying algorithm is to find the minimum of this function in as few measurements as possible.
+
+For details of the underlying algorithm, see:
+L. Bliek, H.R.G.W. Verstraete, M. Verhaegen and S. Wahls - Online otimization with costly and noisy measurements using random Fourier expansions.
+L. Bliek - Automatic Tuning of Photonic Beamformers.
+
+The (unknown) function f(x) that we want to minimize is approximated using a RFE (Random Fourier/Feature Expansion, type `?RFE`).
+n = length(x) and lower_bound .< x .< upper_bound
+
+If f changes over time, then a sliding window of measurements can be used.
+
+The struct keeps track of the current estimate of the optimal x. This is computed from the estimated function (based on the RFE) and a minimization using the NLopt package and the L-BFGS algorithm, initialized using the currently estimated optimal x + some perturbation from the surrogate_exploration_prob_dist probability distribution.
+
+Finding the minimum of the function is balanced with staying at the minimum of the function through the use of exploration of the function using the function_exploration_prob_dist probability distribution to suggest a new measurement around the optimal x + some perturbation.
+"""
 mutable struct DONE
-    rfe::RFE # Random Feature Expansion
+    rfe::RFE # Random Feature/Fourier Expansion
 
     # Variables
     current_optimal_x::Vector{T} where T <: AbstractFloat
@@ -29,7 +69,13 @@ mutable struct DONE
     function_exploration_prob_dist::Distributions.Distribution
 end
 
-function DONE(rfe, lower_bound, upper_bound, σ_surrogate_exploration, σ_function_exploration; sliding_window=true, sliding_window_length=1 )
+"""
+    DONE(rfe, lower_bound, upper_bound, σ_surrogate_exploration, σ_function_exploration; sliding_window=false, sliding_window_length=1 )
+
+The surrogate explaration and the function exploration are initialized with a probability distribution N(0,σI).
+sliding_window_length is the number of past measurements to keep into account.
+"""
+function DONE(rfe, lower_bound, upper_bound, σ_surrogate_exploration, σ_function_exploration; sliding_window=false, sliding_window_length=1 )
     n = size(rfe.Ω,2)
     current_optimal_x = (lower_bound+upper_bound)./2.0
     if sliding_window
@@ -49,7 +95,13 @@ function DONE(rfe, lower_bound, upper_bound, σ_surrogate_exploration, σ_functi
         surrogate_exploration_prob_dist,function_exploration_prob_dist)
 end
 
-# page 111 of Laurens Bliek - Automatic Tuning of Photonic Beamformers
+"""
+    add_measurement!(alg::DONE,x::Vector{T} where T <: AbstractFloat,y::AbstractFloat)
+
+Process a new measurement y from a function evaluation f(x).
+
+Implementation details: see page 111 of L. Bliek - Automatic Tuning of Photonic Beamformers
+"""
 function add_measurement!(alg::DONE,x::Vector{T} where T <: AbstractFloat,y::AbstractFloat)
     v = alg.rfe.variable_offset ? alg.rfe.offset : 0.
 
@@ -90,6 +142,11 @@ function project_on_bounds(x,lb,ub)
     return [min(max(xi,lbi),ubi) for (xi,lbi,ubi) in zip(x,lb,ub)]
 end
 
+"""
+    x_opt = update_optimal_input!(alg::DONE)
+
+Based on the current estimate of the function to be minimized, compute (estimate of) the minimizing argument.
+"""
 function update_optimal_input!(alg::DONE)
     Ω = alg.rfe.Ω
     b = alg.rfe.b
@@ -114,6 +171,11 @@ function update_optimal_input!(alg::DONE)
     return minx
 end
 
+"""
+    x_new = new_input(alg::DONE)
+
+Generate a preffered new measurement to be done on the (noisy) functino f.
+"""
 function new_input(alg::DONE)
     return project_on_bounds(alg.current_optimal_x + rand(alg.function_exploration_prob_dist),alg.lower_bound,alg.upper_bound)
 end

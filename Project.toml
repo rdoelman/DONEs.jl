@@ -3,6 +3,11 @@ uuid = "461570c0-f3f8-11e9-144c-6d5dea563121"
 authors = ["Reinier Doelman"]
 version = "0.1.0"
 
+[deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+NLopt = "76087f3c-5699-56af-9a33-bf431cd00edd"
+
 [compat]
 julia = "1"
 

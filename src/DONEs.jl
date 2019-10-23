@@ -6,7 +6,7 @@ using NLopt
 
 include("RFEs.jl")
 
-export RFE, DONE, add_measurement!, update_optimal_input!, new_input
+export RFE, DONE, add_measurement!, update_optimal_input!, new_input, evaluateRFE
 
 """
     DONE(
@@ -106,7 +106,7 @@ Implementation details: see page 111 of L. Bliek - Automatic Tuning of Photonic 
 """
 function add_measurement!(alg::DONE,x::Vector{T} where T <: AbstractFloat,y::AbstractFloat)
     @assert length(x) == alg.n
-    
+
     v = alg.rfe.variable_offset ? alg.rfe.offset : 0.
 
     # downdate with oldest measurement

@@ -118,6 +118,7 @@ function updateRFE!(rfe::RFE,x::Vector{T} where T <: AbstractFloat,y::AbstractFl
     gn = γn * rfe.P * an
     rfe.c[:] = rfe.c + gn*(y - dot(an,rfe.c)) # update coeffients
     rfe.P[:] = rfe.P - (gn * gn') ./ γn
+    rfe.P[:] = (rfe.P + rfe.P')/2
     return an, gn
 end
 
@@ -135,5 +136,6 @@ function downdateRFE!(rfe::RFE,x::AbstractVector{Float64},y::AbstractFloat)
     gn = γn * rfe.P * an
     rfe.c[:] = rfe.c - gn*(y - dot(an,rfe.c)) # update coeffients
     rfe.P[:] = rfe.P + (gn * gn') ./ γn
+    rfe.P[:] = (rfe.P + rfe.P')/2
     return an, gn
 end

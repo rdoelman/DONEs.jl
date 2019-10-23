@@ -4,7 +4,9 @@ using Distributions
 using LinearAlgebra
 using NLopt
 
-include("src\\RFEs.jl")
+include("RFEs.jl")
+
+export RFE, DONE, add_measurement!, update_optimal_input!, new_input
 
 """
     DONE(
@@ -34,7 +36,7 @@ A DONE (Data-based Online Non-linear Extremun-seeker) struct is the main structu
 The purpose of the underlying algorithm is to find the minimum of this function in as few measurements as possible.
 
 For details of the underlying algorithm, see:
-L. Bliek, H.R.G.W. Verstraete, M. Verhaegen and S. Wahls - Online otimization with costly and noisy measurements using random Fourier expansions.
+L. Bliek, H.R.G.W. Verstraete, M. Verhaegen and S. Wahls - Online otimization with costly and noisy measurements using random Fourier expansions. (https://arxiv.org/abs/1603.09620)
 L. Bliek - Automatic Tuning of Photonic Beamformers.
 
 The (unknown) function f(x) that we want to minimize is approximated using a RFE (Random Fourier/Feature Expansion, type `?RFE`).
@@ -103,6 +105,8 @@ Process a new measurement y from a function evaluation f(x).
 Implementation details: see page 111 of L. Bliek - Automatic Tuning of Photonic Beamformers
 """
 function add_measurement!(alg::DONE,x::Vector{T} where T <: AbstractFloat,y::AbstractFloat)
+    @assert length(x) == alg.n
+    
     v = alg.rfe.variable_offset ? alg.rfe.offset : 0.
 
     # downdate with oldest measurement

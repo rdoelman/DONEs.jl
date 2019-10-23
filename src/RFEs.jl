@@ -35,14 +35,37 @@ mutable struct RFE
     variable_offset::Bool
     h::Vector{T} where T <: AbstractFloat # history variable for computing offsets
     offset::AbstractFloat
+
+    function RFE(D,n,Ω,b,c,P,λ,variable_offset,h,offset)
+        if size(Ω) != (D,n)
+            DimensionMismatch("Dimensions of Ω ($(size(Ω,1)),$(size(Ω,2))) do not match D ($D),n ($n).") |> throw
+        end
+        if length(b) != D
+            DimensionMismatch("Length of b does not match D.") |> throw
+        end
+        if length(c) != D
+            DimensionMismatch("Length of c does not match D.") |> throw
+        end
+        if length(h) != D
+            DimensionMismatch("Length of h does not match D.") |> throw
+        end
+        if size(P) != (D,D)
+            DimensionMismatch("Size of P does not match (D,D).") |> throw
+        end
+        @assert λ >= 0
+        @assert issymmetric(P)
+        @assert all(eigvals(P) .> 0)
+
+        new(D,n,Ω,b,c,P,λ,variable_offset,h,offset)
+    end
 end
 
 """
-    RFE(D::Int, n::Int, distribution_Ω::Distributions.Distribution, distribution_b::Distributions.Distribution, λ::AbstractFloat; variable_offset::Bool)
+    RFE(D::Int, n::Int, distribution_Ω::Distributions.Distribution, distribution_b::Distributions.Distribution; λ::AbstractFloat=1E-6, variable_offset::Bool)
 
 Pick the random coefficients of the matrix Ω and vector b from the distributions distribution_Ω and distribution_b.
 """
-function RFE(D::Int, n::Int, distribution_Ω::Distributions.Distribution, distribution_b::Distributions.Distribution, λ::AbstractFloat; variable_offset::Bool)
+function RFE(D::Int, n::Int, distribution_Ω::Distributions.Distribution, distribution_b::Distributions.Distribution; λ::AbstractFloat=1E-6, variable_offset::Bool=true)
     Ω = rand(distribution_Ω, D, n)
     b = rand(distribution_b, D)
     c = zeros(Float64,D)
@@ -52,15 +75,15 @@ function RFE(D::Int, n::Int, distribution_Ω::Distributions.Distribution, distri
 end
 
 """
-    RFE(D::Int,n::Int,σ_coef::AbstractFloat;λ::AbstractFloat=1E-6,variable_offset::Bool=false)
+    RFE(D::Int,n::Int,σ_coef::AbstractFloat;λ::AbstractFloat=1E-6,variable_offset::Bool=true)
 
 Pick the random coefficients of the matrix Ω from N(0,σI) and b from U(0,2π)
 """
-function RFE(D::Int,n::Int,σ_coef::AbstractFloat;λ::AbstractFloat=1E-6,variable_offset::Bool=false)
+function RFE(D::Int,n::Int,σ_coef::AbstractFloat;λ::AbstractFloat=1E-6,variable_offset::Bool=true)
     distribution_Ω = Distributions.Normal(0.,σ_coef)
     distribution_b = Distributions.Uniform(0.,2π)
 
-    RFE(D,n,distribution_Ω, distribution_b, λ, variable_offset=variable_offset)
+    RFE(D,n,distribution_Ω, distribution_b, λ=λ, variable_offset=variable_offset)
 end
 
 """
@@ -78,7 +101,7 @@ end
 Compute ∑ci gi(x)
 """
 function evaluateRFE(rfe::RFE,x::AbstractVector)
-    return dot(rfe.c, featureexpand(rfe,x))
+    return dot(rfe.c, featureexpand(rfe,x)) - rfe.offset
 end
 
 """

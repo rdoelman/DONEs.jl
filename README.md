@@ -1,7 +1,7 @@
 # DONEs.jl
 
 ## Introduction
-DONE (Data-based Online Non-linear Extremun-seeker) is an algorithm for finding the minimum of an unknown function that is typically expensive or difficult to evaluate and that returns a 'measurement' that is (perhaps) corrupted by noise.
+DONE (Data-based Online Non-linear Extremum-seeker) is an algorithm for finding the minimum of an unknown function that is typically expensive or difficult to evaluate and that returns a 'measurement' that is (perhaps) corrupted by noise.
 Typical examples of such functions are ones that require a costly experiment, physical measurements or a long simulation.
 The purpose of the underlying algorithm is to find the minimum of this unknown function in as few measurements as possible.
 
@@ -14,7 +14,7 @@ The original creators of the algorithm have written implementations in:
 - [Python](https://bitbucket.org/csi-dcsc/pydonec/src/master/)
 - [Matlab](https://bitbucket.org/csi-dcsc/done_matlab/src/master/)
 
-This implementation is in pure Julia.
+This implementation is in Julia, using NLopt.jl for optimization.
 
 ## Usage
 The algorithm keeps track of a surrogate function g(x), an estimate of the real, unknown function f(x), based on previous measurements.
@@ -34,15 +34,15 @@ It uses two exploration parameters:
 
 For example:
 ```julia
-lb = -ones(n)
-ub = ones(n)
+lb = -ones(n) # lower bound
+ub = ones(n) # upper bound
 σs = 0.1 # surrogate exploration  
 σf = 0.1 # function exploration
 done = DONE(rfe, lb, ub, σs, σf)
 ```
 If the function f(x) changes (slowly) over time, you can use a sliding window of measurements. See the function documentation of DONE to see how the keywords need to be set.
 
-The idea is to ask DONE for a new x to test, do the measurement, give this to DONE, find a new optimum and repeat.
+The idea is to ask DONE for a new x to test, do the measurement, give this to DONE, estimate where the optimum is and repeat.
 ```julia
 f(x) = dot(x.-0.1,x.-0.1) + 0.05*randn() # simple quadratic function
 N = 40
@@ -52,5 +52,4 @@ for i in 1:N
     add_measurement!(done, xi, yi)
     update_optimal_input!(done)
 end
-
 ```

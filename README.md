@@ -6,7 +6,7 @@ Typical examples of such functions are ones that require a costly experiment, ph
 The purpose of the underlying algorithm is to find the minimum of this unknown function in as few measurements as possible.
 
 For details of the underlying algorithm, see:
-- L. Bliek, H.R.G.W. Verstraete, M. Verhaegen and S. Wahls - [Online otimization with costly and noisy measurements using random Fourier expansions](https://arxiv.org/abs/1603.09620).
+- L. Bliek, H.R.G.W. Verstraete, M. Verhaegen and S. Wahls - [Online optimization with costly and noisy measurements using random Fourier expansions](https://arxiv.org/abs/1603.09620).
 - L. Bliek - [Automatic Tuning of Photonic Beamformers](https://repository.tudelft.nl/islandora/object/uuid:8bf73354-7c68-4512-8c2b-a5f060e783f4/datastream/OBJ/download).
 
 The original creators of the algorithm have written implementations in:
